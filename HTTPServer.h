@@ -2,9 +2,9 @@
 
 @interface HTTPRequest : NSObject
 
-@property (nonatomic, copy) NSString* path;
-@property (nonatomic, copy) NSString* method;
-@property (nonatomic, strong) NSData* body;
+@property (readonly, nonatomic, copy) NSString* path;
+@property (readonly, nonatomic, copy) NSString* method;
+@property (readonly, nonatomic, strong) NSData* body;
 
 - (instancetype)initWithPath:(NSString*)path method:(NSString*)method body:(NSData*)body;
 

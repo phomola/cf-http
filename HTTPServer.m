@@ -1,6 +1,14 @@
 #import "HTTPServer.h"
 #include <netinet/in.h>
 
+@interface HTTPRequest ()
+
+@property (nonatomic, copy) NSString* path;
+@property (nonatomic, copy) NSString* method;
+@property (nonatomic, strong) NSData* body;
+
+@end
+
 @implementation HTTPRequest
 
 - (instancetype)initWithPath:(NSString*)path method:(NSString*)method body:(NSData*)body {
