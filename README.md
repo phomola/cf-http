@@ -11,7 +11,7 @@ if ([server isReadyToAccept] == NO) {
 }
 
 [server serveWithBlock: ^(HTTPRequest* request) {
-    NSLog(@"new request: %@ %@ %lu", request.path, request.method, [request.body length]);
+    NSLog(@"new request: %@ %@ %lu", request.URL.path, request.method, [request.body length]);
     __auto_type input = [[NSString alloc] initWithData: request.body
                                               encoding: NSUTF8StringEncoding];
     NSMutableString* output = [input mutableCopy];
