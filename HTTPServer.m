@@ -65,7 +65,7 @@
             NSLog(@"socket bind failed");
             return self;
         }
-        if (listen(sockfd, 100) != 0) {
+        if (listen(sockfd, 100) < 0) {
             NSLog(@"socket listen failed");
             return self;
         }
