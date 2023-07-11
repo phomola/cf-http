@@ -6,8 +6,6 @@
 @property (readonly, nonatomic, copy) NSString* method;
 @property (readonly, nonatomic, strong) NSData* body;
 
-// - (instancetype)initWithPath:(NSURL*)URL method:(NSString*)method body:(NSData*)body;
-
 @end
 
 @interface HTTPResponse : NSObject
