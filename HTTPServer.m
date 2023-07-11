@@ -3,7 +3,7 @@
 
 @interface HTTPRequest ()
 
-@property (nonatomic, copy) NSString* path;
+@property (nonatomic, strong) NSURL* URL;
 @property (nonatomic, copy) NSString* method;
 @property (nonatomic, strong) NSData* body;
 
@@ -11,9 +11,9 @@
 
 @implementation HTTPRequest
 
-- (instancetype)initWithPath:(NSString*)path method:(NSString*)method body:(NSData*)body {
+- (instancetype)initWithURL:(NSURL*)URL method:(NSString*)method body:(NSData*)body {
     if ((self = [super init])) {
-        self.path = path;
+        self.URL = URL;
         self.method = method;
         self.body = body;
     }
@@ -84,7 +84,7 @@
             return;
         }
         [NSThread detachNewThreadWithBlock: ^{
-            CFStringRef path = NULL;
+            CFURLRef url = NULL;
             CFStringRef method = NULL;
             CFDataRef body = NULL;
             CFHTTPMessageRef resp = NULL;
@@ -125,17 +125,15 @@
                     } else break;
                 }
             }
-            __auto_type url = CFHTTPMessageCopyRequestURL(req);
+            url = CFHTTPMessageCopyRequestURL(req);
             if (url == NULL) {
                 NSLog(@"failed to get request URL");
                 goto cleanup;
             }
-            path = CFURLCopyPath(url);
             method = CFHTTPMessageCopyRequestMethod(req);
-            CFRelease(url);
-            response = block([[HTTPRequest alloc] initWithPath: (__bridge NSString*)path
-                                                        method: (__bridge NSString*)method
-                                                          body: (__bridge NSData*)body]);
+            response = block([[HTTPRequest alloc] initWithURL: (__bridge NSURL*)url
+                                                       method: (__bridge NSString*)method
+                                                         body: (__bridge NSData*)body]);
             resp = CFHTTPMessageCreateResponse(kCFAllocatorDefault, response.status, NULL, kCFHTTPVersion1_1);
             CFHTTPMessageSetBody(resp, (__bridge CFDataRef)response.body);
             __auto_type msg = CFHTTPMessageCopySerializedMessage(resp);
@@ -152,7 +150,7 @@
             }
             CFRelease(msg);
         cleanup:
-            if (path != NULL) CFRelease(path);
+            if (url != NULL) CFRelease(url);
             if (method != NULL) CFRelease(method);
             if (body != NULL) CFRelease(body);
             CFRelease(req);
