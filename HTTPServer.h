@@ -10,7 +10,7 @@
 
 @interface HTTPResponse : NSObject
 
-- (instancetype)initWithStatus:(int)status body:(NSData*)body;
+- (instancetype)initWithStatus:(int)status body:(NSData*)body anyAddress:(BOOL)anyAddress;
 
 @end
 

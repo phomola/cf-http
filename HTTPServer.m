@@ -50,7 +50,7 @@
 
 @implementation HTTPServer
 
-- (instancetype)initWithPort:(int)port backlog:(int)backlog {
+- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress {
     if ((self = [super init])) {
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -60,7 +60,7 @@
         struct sockaddr_in servaddr;
         bzero(&servaddr, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        servaddr.sin_addr.s_addr = htonl(anyAddress ? INADDR_ANY : INADDR_LOOPBACK);
         servaddr.sin_port = htons(port);
         if (bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {
             NSLog(@"socket bind failed");
