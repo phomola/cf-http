@@ -49,7 +49,7 @@
 
 @implementation HTTPServer
 
-- (instancetype)initWithPort:(int)port {
+- (instancetype)initWithPort:(int)port backlog:(int)backlog {
     if ((self = [super init])) {
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -65,7 +65,7 @@
             NSLog(@"socket bind failed");
             return self;
         }
-        if (listen(sockfd, 100) != 0) {
+        if (listen(sockfd, backlog) < 0) {
             NSLog(@"socket listen failed");
             return self;
         }
