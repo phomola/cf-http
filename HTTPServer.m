@@ -88,79 +88,81 @@
             return self.closed;
         }
         __auto_type f = ^{
-            CFURLRef url = NULL;
-            CFStringRef method = NULL;
-            CFDataRef body = NULL;
-            CFHTTPMessageRef resp = NULL;
-            HTTPResponse* response;
-            int contentLength = 0;
-            bool headerProcessed = false;
-            __auto_type req = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, TRUE);
-            unsigned char buf[bufferSize];
-            int shouldRead = bufferSize;
-            for (;;) {
-                int n = read(connfd, buf, shouldRead);
-                if (n < 0) {
-                    NSLog(@"read failed");
-                    goto cleanup;
-                }
-                if (n == 0) break;
-                if (CFHTTPMessageAppendBytes(req, buf, n) == FALSE) {
-                    NSLog(@"request message append failed");
-                    goto cleanup;
-                }
-                if (CFHTTPMessageIsHeaderComplete(req) == TRUE) {
-                    if (!headerProcessed) {
-                        __auto_type sContentLength = CFHTTPMessageCopyHeaderFieldValue(req, CFSTR("Content-Length"));
-                        if (sContentLength != NULL) {
-                            char s[100];
-                            CFStringGetCString(sContentLength, s, 100, kCFStringEncodingUTF8);
-                            contentLength = atoi(s);
-                            CFRelease(sContentLength);
-                        }
-                        headerProcessed = true;
+            @autoreleasepool {
+                CFURLRef url = NULL;
+                CFStringRef method = NULL;
+                CFDataRef body = NULL;
+                CFHTTPMessageRef resp = NULL;
+                HTTPResponse* response;
+                int contentLength = 0;
+                bool headerProcessed = false;
+                __auto_type req = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, TRUE);
+                unsigned char buf[bufferSize];
+                long shouldRead = bufferSize;
+                for (;;) {
+                    __auto_type n = read(connfd, buf, shouldRead);
+                    if (n < 0) {
+                        NSLog(@"read failed");
+                        goto cleanup;
                     }
-                    body = CFHTTPMessageCopyBody(req);
-                    if (body != NULL) {
-                        __auto_type len = CFDataGetLength(body);
-                        if (len >= contentLength) break;
-                        shouldRead = contentLength - len;
-                        if (shouldRead > bufferSize) shouldRead = bufferSize;
-                        CFRelease(body);
-                    } else break;
+                    if (n == 0) break;
+                    if (CFHTTPMessageAppendBytes(req, buf, n) == FALSE) {
+                        NSLog(@"request message append failed");
+                        goto cleanup;
+                    }
+                    if (CFHTTPMessageIsHeaderComplete(req) == TRUE) {
+                        if (!headerProcessed) {
+                            __auto_type sContentLength = CFHTTPMessageCopyHeaderFieldValue(req, CFSTR("Content-Length"));
+                            if (sContentLength != NULL) {
+                                char s[100];
+                                CFStringGetCString(sContentLength, s, 100, kCFStringEncodingUTF8);
+                                contentLength = atoi(s);
+                                CFRelease(sContentLength);
+                            }
+                            headerProcessed = true;
+                        }
+                        __auto_type body2 = CFHTTPMessageCopyBody(req);
+                        if (body2 != NULL) {
+                            __auto_type len = CFDataGetLength(body2);
+                            if (len >= contentLength) { body = body2; break; }
+                            shouldRead = contentLength - len;
+                            if (shouldRead > bufferSize) shouldRead = bufferSize;
+                            CFRelease(body2);
+                        } else break;
+                    }
                 }
-            }
-            url = CFHTTPMessageCopyRequestURL(req);
-            if (url == NULL) {
-                NSLog(@"failed to get request URL");
-                goto cleanup;
-            }
-            method = CFHTTPMessageCopyRequestMethod(req);
-            response = block([[HTTPRequest alloc] initWithURL: (__bridge NSURL*)url
-                                                       method: (__bridge NSString*)method
-                                                         body: (__bridge NSData*)body]);
-            resp = CFHTTPMessageCreateResponse(kCFAllocatorDefault, response.status, NULL, kCFHTTPVersion1_1);
-            CFHTTPMessageSetBody(resp, (__bridge CFDataRef)response.body);
-            __auto_type msg = CFHTTPMessageCopySerializedMessage(resp);
-            __auto_type ptr = CFDataGetBytePtr(msg);
-            __auto_type len = CFDataGetLength(msg);
-            while (len > 0) {
-                int n = write(connfd, ptr, len);
-                if (n < 0) {
-                    printf("write failed\n");
-                    break;
+                url = CFHTTPMessageCopyRequestURL(req);
+                if (url == NULL) {
+                    NSLog(@"failed to get request URL");
+                    goto cleanup;
                 }
-                ptr += n;
-                len -= n;
+                method = CFHTTPMessageCopyRequestMethod(req);
+                response = block([[HTTPRequest alloc] initWithURL: (__bridge NSURL*)url
+                                                           method: (__bridge NSString*)method
+                                                             body: (__bridge NSData*)body]);
+                resp = CFHTTPMessageCreateResponse(kCFAllocatorDefault, response.status, NULL, kCFHTTPVersion1_1);
+                CFHTTPMessageSetBody(resp, (__bridge CFDataRef)response.body);
+                __auto_type msg = CFHTTPMessageCopySerializedMessage(resp);
+                __auto_type ptr = CFDataGetBytePtr(msg);
+                __auto_type len = CFDataGetLength(msg);
+                while (len > 0) {
+                    __auto_type n = write(connfd, ptr, len);
+                    if (n < 0) {
+                        printf("write failed\n");
+                        break;
+                    }
+                    ptr += n;
+                    len -= n;
+                }
+                CFRelease(msg);
+            cleanup:
+                CFRelease(req);
+                if (url != NULL) CFRelease(url);
+                if (method != NULL) CFRelease(method);
+                if (body != NULL) CFRelease(body);
+                if (resp != NULL) CFRelease(resp);
+                close(connfd);
             }
-            CFRelease(msg);
-        cleanup:
-            if (url != NULL) CFRelease(url);
-            if (method != NULL) CFRelease(method);
-            if (body != NULL) CFRelease(body);
-            CFRelease(req);
-            if (resp != NULL) CFRelease(resp);
-            close(connfd);
         };
         if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
         else f();
@@ -179,5 +181,5 @@
 @end
 
 #if !__has_feature(objc_arc)
-	#error ARC is required
+    #error ARC is required
 #endif
