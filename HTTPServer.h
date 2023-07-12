@@ -10,13 +10,13 @@
 
 @interface HTTPResponse : NSObject
 
-- (instancetype)initWithStatus:(int)status body:(NSData*)body anyAddress:(BOOL)anyAddress;
+- (instancetype)initWithStatus:(int)status body:(NSData*)body;
 
 @end
 
 @interface HTTPServer : NSObject
 
-- (instancetype)initWithPort:(int)port backlog:(int)backlog;
+- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress;
 - (BOOL)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block;
 - (void)close;
 - (BOOL)isReadyToAccept;
