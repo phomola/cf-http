@@ -163,6 +163,37 @@
                 if (resp != NULL) CFRelease(resp);
                 close(connfd);
             }
+            url = CFHTTPMessageCopyRequestURL(req);
+            if (url == NULL) {
+                NSLog(@"failed to get request URL");
+                goto cleanup;
+            }
+            method = CFHTTPMessageCopyRequestMethod(req);
+            response = block([[HTTPRequest alloc] initWithURL: (__bridge NSURL*)url
+                                                       method: (__bridge NSString*)method
+                                                         body: (__bridge NSData*)body]);
+            resp = CFHTTPMessageCreateResponse(kCFAllocatorDefault, response.status, NULL, kCFHTTPVersion1_1);
+            CFHTTPMessageSetBody(resp, (__bridge CFDataRef)response.body);
+            __auto_type msg = CFHTTPMessageCopySerializedMessage(resp);
+            __auto_type ptr = CFDataGetBytePtr(msg);
+            __auto_type len = CFDataGetLength(msg);
+            while (len > 0) {
+                int n = write(connfd, ptr, len);
+                if (n < 0) {
+                    printf("write failed\n");
+                    break;
+                }
+                ptr += n;
+                len -= n;
+            }
+            CFRelease(msg);
+        cleanup:
+            if (url != NULL) CFRelease(url);
+            if (method != NULL) CFRelease(method);
+            if (body != NULL) CFRelease(body);
+            CFRelease(req);
+            if (resp != NULL) CFRelease(resp);
+            close(connfd);
         };
         if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
         else f();
