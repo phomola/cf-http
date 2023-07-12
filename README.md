@@ -1,5 +1,5 @@
 # cf-http
-CF HTTP server
+This is a simple HTTP server based on CoreFoundation. It's a naïve implementation detaching a new thread for each request. We'll use *kqueue* in the future.
 
 Example:
 ```
