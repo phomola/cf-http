@@ -44,6 +44,7 @@
 @interface HTTPServer ()
 
 @property (nonatomic) int serverfd;
+@property (atomic) BOOL closed;
 
 @end
 
@@ -74,14 +75,14 @@
     return self;
 }
 
-- (void)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block {
+- (BOOL)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block {
     struct sockaddr_in claddr;
     unsigned int len = sizeof(claddr);
     for (;;) {
         int connfd = accept(self.serverfd, (struct sockaddr*)&claddr, &len);
         if (connfd < 0) {
-            NSLog(@"accept failed");
-            return;
+            if (self.closed == NO) NSLog(@"accept failed");
+            return !self.closed;
         }
         [NSThread detachNewThreadWithBlock: ^{
             CFURLRef url = NULL;
@@ -160,8 +161,13 @@
     }
 }
 
+- (void)close {
+    self.closed = YES;
+    close(self.serverfd);
+}
+
 - (BOOL)isReadyToAccept {
-    return self.serverfd != 0;
+    return self.serverfd != 0 && self.closed == NO;
 }
 
 @end
