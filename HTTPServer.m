@@ -78,6 +78,7 @@
 - (BOOL)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block {
     struct sockaddr_in claddr;
     unsigned int len = sizeof(claddr);
+    const int bufferSize = 10*1000;
     for (;;) {
         int connfd = accept(self.serverfd, (struct sockaddr*)&claddr, &len);
         if (connfd < 0) {
@@ -93,8 +94,8 @@
             int contentLength = 0;
             bool headerProcessed = false;
             __auto_type req = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, TRUE);
-            unsigned char buf[1000];
-            int shouldRead = 1000;
+            unsigned char buf[bufferSize];
+            int shouldRead = bufferSize;
             for (;;) {
                 int n = read(connfd, buf, shouldRead);
                 if (n < 0) {
@@ -122,6 +123,7 @@
                         __auto_type len = CFDataGetLength(body);
                         if (len >= contentLength) break;
                         shouldRead = contentLength - len;
+                        if (shouldRead > bufferSize) shouldRead = bufferSize;
                         CFRelease(body);
                     } else break;
                 }
