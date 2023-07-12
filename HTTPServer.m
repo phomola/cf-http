@@ -82,7 +82,7 @@
         int connfd = accept(self.serverfd, (struct sockaddr*)&claddr, &len);
         if (connfd < 0) {
             if (self.closed == NO) NSLog(@"accept failed");
-            return !self.closed;
+            return self.closed;
         }
         [NSThread detachNewThreadWithBlock: ^{
             CFURLRef url = NULL;
