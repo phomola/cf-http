@@ -58,6 +58,10 @@
             NSLog(@"socket creation failed");
             return self;
         }
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
+            NSLog(@"failed to set socket option");
+            return self;
+        }
         struct sockaddr_in servaddr;
         bzero(&servaddr, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
@@ -67,6 +71,7 @@
             NSLog(@"socket bind failed");
             return self;
         }
+        if (backlog > SOMAXCONN) backlog = SOMAXCONN;
         if (listen(sockfd, backlog) < 0) {
             NSLog(@"socket listen failed");
             return self;
@@ -161,7 +166,9 @@
                 if (method != NULL) CFRelease(method);
                 if (body != NULL) CFRelease(body);
                 if (resp != NULL) CFRelease(resp);
-                close(connfd);
+                if (close(connfd) < 0) {
+                    NSLog(@"failed to close socket: %s", strerror(errno));
+                }
             }
         };
         if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
