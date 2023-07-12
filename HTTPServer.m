@@ -44,13 +44,14 @@
 @interface HTTPServer ()
 
 @property (nonatomic) int serverfd;
+@property (nonatomic) BOOL multithreaded;
 @property (atomic) BOOL closed;
 
 @end
 
 @implementation HTTPServer
 
-- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress {
+- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress multithreaded:(BOOL)multithreaded {
     if ((self = [super init])) {
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -71,6 +72,7 @@
             return self;
         }
         self.serverfd = sockfd;
+        self.multithreaded = multithreaded;
     }
     return self;
 }
@@ -85,7 +87,7 @@
             if (self.closed == NO) NSLog(@"accept failed");
             return self.closed;
         }
-        [NSThread detachNewThreadWithBlock: ^{
+        __auto_type f = ^{
             CFURLRef url = NULL;
             CFStringRef method = NULL;
             CFDataRef body = NULL;
@@ -159,7 +161,9 @@
             CFRelease(req);
             if (resp != NULL) CFRelease(resp);
             close(connfd);
-        }];
+        };
+        if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
+        else f();
     }
 }
 

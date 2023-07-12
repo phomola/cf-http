@@ -16,7 +16,7 @@
 
 @interface HTTPServer : NSObject
 
-- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress;
+- (instancetype)initWithPort:(int)port backlog:(int)backlog anyAddress:(BOOL)anyAddress multithreaded:(BOOL)multithreaded;
 - (BOOL)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block;
 - (void)close;
 - (BOOL)isReadyToAccept;
