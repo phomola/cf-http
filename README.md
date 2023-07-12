@@ -3,7 +3,7 @@ This is a simple HTTP server based on CoreFoundation. It's a naïve implementati
 
 Example:
 ```
-__auto_type server = [[HTTPServer alloc] initWithPort: 8080 backlog: 100];
+__auto_type server = [[HTTPServer alloc] initWithPort: 8080 backlog: 100 anyAddress: NO multithreaded: NO];
 
 if ([server isReadyToAccept] == NO) {
     NSLog(@"failed to create server");
