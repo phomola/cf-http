@@ -87,10 +87,10 @@
 }
 
 - (BOOL)serveWithBlock:(HTTPResponse*(^)(HTTPRequest*))block {
-    struct sockaddr_in claddr;
-    unsigned int len = sizeof(claddr);
     const int bufferSize = 10*1000;
     for (;;) {
+        struct sockaddr_in claddr;
+        unsigned int len = sizeof(claddr);
         int connfd = accept(self.serverfd, (struct sockaddr*)&claddr, &len);
         if (connfd < 0) {
             if (self.closed == NO) NSLog(@"accept failed");
@@ -188,8 +188,10 @@
                 }
             }
         };
-        if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
-        else f();
+        @autoreleasepool {
+            if (self.multithreaded == YES) [NSThread detachNewThreadWithBlock: f];
+            else f();
+        }
     }
 }
 
