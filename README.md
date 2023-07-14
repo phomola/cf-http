@@ -17,6 +17,7 @@ if ([server isReadyToAccept] == NO) {
     NSMutableString* output = [input mutableCopy];
     [output appendString: input];
     return [[HTTPResponse alloc] initWithStatus: 200
-                                           body: [output dataUsingEncoding: NSUTF8StringEncoding]];
+                                           body: [output dataUsingEncoding: NSUTF8StringEncoding]
+                                        headers: nil];
 }];
 ```
