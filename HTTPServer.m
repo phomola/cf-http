@@ -6,16 +6,18 @@
 @property (nonatomic, strong) NSURL* URL;
 @property (nonatomic, copy) NSString* method;
 @property (nonatomic, strong) NSData* body;
+@property (nonatomic, strong) NSDictionary* headers;
 
 @end
 
 @implementation HTTPRequest
 
-- (instancetype)initWithURL:(NSURL*)URL method:(NSString*)method body:(NSData*)body {
+- (instancetype)initWithURL:(NSURL*)URL method:(NSString*)method body:(NSData*)body headers:(NSDictionary*)headers {
     if ((self = [super init])) {
         self.URL = URL;
         self.method = method;
         self.body = body;
+        self.headers = headers;
     }
     return self;
 }
@@ -26,15 +28,17 @@
 
 @property (nonatomic) int status;
 @property (nonatomic, strong) NSData* body;
+@property (nonatomic, strong) NSDictionary* headers;
 
 @end
 
 @implementation HTTPResponse
 
-- (instancetype)initWithStatus:(int)status body:(NSData*)body {
+- (instancetype)initWithStatus:(int)status body:(NSData*)body headers:(NSDictionary*)headers {
     if ((self = [super init])) {
         self.status = status;
         self.body = body;
+        self.headers = headers;
     }
     return self;
 }
@@ -98,6 +102,7 @@
                 CFStringRef method = NULL;
                 CFDataRef body = NULL;
                 CFHTTPMessageRef resp = NULL;
+                CFDictionaryRef headers = NULL;
                 HTTPResponse* response;
                 int contentLength = 0;
                 bool headerProcessed = false;
@@ -142,10 +147,21 @@
                     goto cleanup;
                 }
                 method = CFHTTPMessageCopyRequestMethod(req);
+                headers = CFHTTPMessageCopyAllHeaderFields(req);
+                if (headers == NULL) {
+                    NSLog(@"failed to get request headers");
+                    goto cleanup;
+                }
                 response = block([[HTTPRequest alloc] initWithURL: (__bridge NSURL*)url
                                                            method: (__bridge NSString*)method
-                                                             body: (__bridge NSData*)body]);
+                                                             body: (__bridge NSData*)body
+                                                          headers: (__bridge NSDictionary*)headers]);
                 resp = CFHTTPMessageCreateResponse(kCFAllocatorDefault, response.status, NULL, kCFHTTPVersion1_1);
+                if (response.headers != nil) {
+                    [response.headers enumerateKeysAndObjectsUsingBlock: ^(NSString* key, NSString* value, BOOL* stop) {
+                        CFHTTPMessageSetHeaderFieldValue(resp, (__bridge CFStringRef)key, (__bridge CFStringRef)value);
+                    }];
+                }
                 CFHTTPMessageSetBody(resp, (__bridge CFDataRef)response.body);
                 __auto_type msg = CFHTTPMessageCopySerializedMessage(resp);
                 __auto_type ptr = CFDataGetBytePtr(msg);
@@ -166,6 +182,7 @@
                 if (method != NULL) CFRelease(method);
                 if (body != NULL) CFRelease(body);
                 if (resp != NULL) CFRelease(resp);
+                if (headers != NULL) CFRelease(headers);
                 if (close(connfd) < 0) {
                     NSLog(@"failed to close socket: %s", strerror(errno));
                 }
