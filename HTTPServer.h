@@ -5,12 +5,13 @@
 @property (readonly, nonatomic, strong) NSURL* URL;
 @property (readonly, nonatomic, copy) NSString* method;
 @property (readonly, nonatomic, strong) NSData* body;
+@property (readonly, nonatomic, strong) NSDictionary* headers;
 
 @end
 
 @interface HTTPResponse : NSObject
 
-- (instancetype)initWithStatus:(int)status body:(NSData*)body;
+- (instancetype)initWithStatus:(int)status body:(NSData*)body headers:(NSDictionary*)headers;
 
 @end
 
